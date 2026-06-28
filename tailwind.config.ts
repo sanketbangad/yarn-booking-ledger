@@ -8,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Ledger palette — neutrals + a deep trade-green accent.
+        // Ledger palette — neutrals + Bangad Group brand orange accent.
         bg: "#F6F7F8",
         surface: "#FFFFFF",
         border: "#E7E9EC",
@@ -17,10 +17,10 @@ const config: Config = {
         muted: "#6B7280",
         faint: "#9CA3AF",
         primary: {
-          DEFAULT: "#0E7C5A",
-          hover: "#0B6549",
-          soft: "#E7F4EF",
-          ring: "#0E7C5A33",
+          DEFAULT: "#E8821E",
+          hover: "#CF7115",
+          soft: "#FCEEDD",
+          ring: "#E8821E33",
         },
         danger: {
           DEFAULT: "#C0392B",
@@ -49,7 +49,7 @@ const config: Config = {
           to: { opacity: "1", transform: "scale(1)" },
         },
         "row-flash": {
-          "0%": { backgroundColor: "#E7F4EF" },
+          "0%": { backgroundColor: "#FCEEDD" },
           "100%": { backgroundColor: "transparent" },
         },
       },
