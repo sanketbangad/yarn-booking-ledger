@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — Booking Ledger</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #f6f7f8;
+        color: #181b1f;
+        padding: 24px;
+      }
+      .card {
+        max-width: 380px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #e7e9ec;
+        border-radius: 16px;
+        padding: 32px 28px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+      }
+      .glyph {
+        width: 56px; height: 56px; margin: 0 auto 16px;
+        border-radius: 14px; background: #0e7c5a;
+        display: grid; place-items: center; color: #fff; font-weight: 700;
+      }
+      h1 { font-size: 18px; margin: 0 0 8px; }
+      p { color: #6b7280; font-size: 14px; line-height: 1.5; margin: 0 0 20px; }
+      button {
+        appearance: none; border: 0; cursor: pointer;
+        background: #0e7c5a; color: #fff; font-weight: 600; font-size: 14px;
+        padding: 10px 18px; border-radius: 10px;
+      }
+      button:hover { background: #0b6549; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="glyph">▦</div>
+      <h1>You're offline</h1>
+      <p>Booking Ledger needs a connection to load and sync bookings. Reconnect and try again.</p>
+      <button onclick="location.reload()">Retry</button>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg text-ink antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Consistent, accessible focus rings */
+  :focus-visible {
+    outline: none;
+  }
+
+  /* Tabular numerics everywhere we use the mono font */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tidy date input across browsers */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+  }
+
+  /* Hide the native search clear button (we provide our own chips) */
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+}
+
+@layer utilities {
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* Thin, unobtrusive scrollbars for the table */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #d6d9dd;
+    border-radius: 8px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
