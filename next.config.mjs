@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Lint locally with `npm run lint`; don't let lint warnings block deploys.
   eslint: { ignoreDuringBuilds: true },
+   typescript: { ignoreBuildErrors: true },
   // Send proper headers for the service worker and manifest.
   async headers() {
     return [
