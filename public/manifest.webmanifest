@@ -1,6 +1,6 @@
 {
-  "name": "Booking Ledger",
-  "short_name": "Ledger",
+  "name": "BGI Yarn",
+  "short_name": "BGI Yarn",
   "description": "A realtime, multi-user booking ledger for parties, items, rates and brokers.",
   "id": "/",
   "start_url": "/dashboard",

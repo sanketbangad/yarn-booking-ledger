@@ -1,6 +1,6 @@
 import type { QuantityUnit } from "@/lib/types";
 
-export const APP_NAME = "Booking Ledger";
+export const APP_NAME = "BGI Yarn";
 
 export const QUANTITY_UNITS: QuantityUnit[] = ["Bags", "KG"];
 
