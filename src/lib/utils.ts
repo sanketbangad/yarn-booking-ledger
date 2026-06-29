@@ -59,7 +59,7 @@ export function initials(name: string): string {
 /** Deterministic soft color for an avatar based on a name. */
 export function avatarColor(name: string): string {
   const colors = [
-    "#0E7C5A", "#2563EB", "#7C3AED", "#DB2777",
+    "#E8821E", "#2563EB", "#7C3AED", "#DB2777",
     "#D97706", "#0891B2", "#65A30D", "#DC2626",
   ];
   let hash = 0;

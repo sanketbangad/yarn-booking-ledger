@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Search, Plus, ArrowUp, ArrowDown, ChevronsUpDown, SlidersHorizontal,
-  Pencil, Trash2, X, Inbox, Filter as FilterIcon,
+  Pencil, Trash2, X, Inbox, Filter as FilterIcon, PackageCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Field";
@@ -23,12 +23,32 @@ interface BookingTableProps {
   currentUserId: string;
   isAdmin: boolean;
   flashId: string | null;
+  receivedByBooking: Map<string, number>;
   onNew: () => void;
   onEdit: (b: Booking) => void;
   onDelete: (b: Booking) => void;
+  onReceive: (b: Booking) => void;
 }
 
 const FILTER_COLS = COLUMNS.filter((c) => c.filterable);
+// columns rendered = data columns + Received status + Actions
+const EXTRA_COLS = 2;
+
+interface Recv {
+  received: number;
+  pending: number;
+  pct: number;
+  label: "Received" | "Partial" | "Pending";
+}
+
+function recvInfo(b: Booking, receivedByBooking: Map<string, number>): Recv {
+  const ordered = Number(b.quantity);
+  const received = receivedByBooking.get(b.id) ?? 0;
+  const pending = Math.max(0, ordered - received);
+  const pct = ordered > 0 ? Math.min(100, Math.round((received / ordered) * 100)) : 0;
+  const label = received <= 0 ? "Pending" : pending <= 0 ? "Received" : "Partial";
+  return { received, pending, pct, label };
+}
 
 export function BookingTable({
   bookings,
@@ -36,16 +56,17 @@ export function BookingTable({
   currentUserId,
   isAdmin,
   flashId,
+  receivedByBooking,
   onNew,
   onEdit,
   onDelete,
+  onReceive,
 }: BookingTableProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortState>({ key: "booking_date", dir: "desc" });
   const [filters, setFilters] = useState<Partial<Record<ColumnKey, string>>>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  // Distinct values per filterable column.
   const distinct = useMemo(() => {
     const map: Partial<Record<ColumnKey, string[]>> = {};
     for (const col of FILTER_COLS) {
@@ -65,11 +86,9 @@ export function BookingTable({
     const q = search.trim().toLowerCase();
 
     let list = bookings.filter((b) => {
-      // per-column filters
       for (const [key, val] of activeFilters) {
         if (String(b[key as ColumnKey] ?? "") !== val) return false;
       }
-      // global search
       if (!q) return true;
       const haystack = [
         b.party_name, b.item_name, b.broker, b.booked_by_name,
@@ -94,7 +113,6 @@ export function BookingTable({
       bv = String(bv ?? "").toLowerCase();
       if (av < bv) return -1 * mult;
       if (av > bv) return 1 * mult;
-      // tie-breaker: newest first
       return (a.created_at < b.created_at ? 1 : -1);
     });
     return list;
@@ -249,7 +267,10 @@ export function BookingTable({
                     </th>
                   );
                 })}
-                <th className="w-20 px-3 py-2.5 text-right text-[12px] font-semibold uppercase tracking-wide text-muted">
+                <th className="whitespace-nowrap px-3 py-2.5 text-left text-[12px] font-semibold uppercase tracking-wide text-muted">
+                  Received
+                </th>
+                <th className="w-24 px-3 py-2.5 text-right text-[12px] font-semibold uppercase tracking-wide text-muted">
                   {/* actions */}
                 </th>
               </tr>
@@ -259,13 +280,14 @@ export function BookingTable({
                 <SkeletonRows />
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={COLUMNS.length + 1}>
+                  <td colSpan={COLUMNS.length + EXTRA_COLS}>
                     <EmptyState hasFilter={hasAnyFilter} onNew={onNew} onClear={clearAll} />
                   </td>
                 </tr>
               ) : (
                 rows.map((b) => {
                   const own = b.created_by === currentUserId;
+                  const r = recvInfo(b, receivedByBooking);
                   return (
                     <tr
                       key={b.id}
@@ -310,9 +332,13 @@ export function BookingTable({
                       <td className="hidden max-w-[220px] truncate px-3 py-2.5 text-muted lg:table-cell" title={b.remarks ?? ""}>
                         {b.remarks || <span className="text-faint">—</span>}
                       </td>
+                      <td className="whitespace-nowrap px-3 py-2.5">
+                        <ReceiveStatus r={r} unit={b.quantity_unit} />
+                      </td>
                       <td className="px-3 py-2.5">
                         <RowActions
                           canModify={canModify(b)}
+                          onReceive={() => onReceive(b)}
                           onEdit={() => onEdit(b)}
                           onDelete={() => onDelete(b)}
                         />
@@ -337,6 +363,7 @@ export function BookingTable({
         ) : (
           rows.map((b) => {
             const own = b.created_by === currentUserId;
+            const r = recvInfo(b, receivedByBooking);
             return (
               <div
                 key={b.id}
@@ -352,6 +379,7 @@ export function BookingTable({
                   </div>
                   <RowActions
                     canModify={canModify(b)}
+                    onReceive={() => onReceive(b)}
                     onEdit={() => onEdit(b)}
                     onDelete={() => onDelete(b)}
                     alwaysVisible
@@ -368,6 +396,34 @@ export function BookingTable({
                   <Cell label="Date" value={formatDate(b.booking_date)} mono />
                   <Cell label="Broker" value={b.broker || "—"} />
                 </div>
+
+                {/* Received / pending */}
+                <div className="mt-3 rounded-lg bg-bg px-3 py-2.5">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="font-medium text-ink">
+                      <span className="font-mono tabular-nums">{formatNumber(r.received)}</span>
+                      <span className="text-faint"> / {formatNumber(b.quantity)} {b.quantity_unit}</span>
+                    </span>
+                    <StatusPill label={r.label} />
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-border">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${r.pct}%` }} />
+                  </div>
+                  {r.pending > 0 && (
+                    <p className="mt-1 text-[11px] text-muted">
+                      {formatNumber(r.pending)} {b.quantity_unit} pending
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-2.5 w-full"
+                  onClick={() => onReceive(b)}
+                >
+                  <PackageCheck className="h-4 w-4" /> Record delivery
+                </Button>
 
                 {b.remarks && (
                   <p className="mt-2 rounded-lg bg-bg px-2.5 py-1.5 text-[12px] text-muted">
@@ -399,41 +455,88 @@ export function BookingTable({
 
 /* ---------- small pieces ---------- */
 
+function ReceiveStatus({ r, unit }: { r: Recv; unit: string }) {
+  return (
+    <div className="min-w-[120px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-[12px] tabular-nums text-ink">
+          {formatNumber(r.received)}
+          <span className="text-faint">/{formatNumber(r.received + r.pending)}</span>
+        </span>
+        <StatusPill label={r.label} />
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-border">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${r.pct}%` }} />
+      </div>
+      {r.pending > 0 ? (
+        <p className="mt-0.5 text-[10px] text-muted">{formatNumber(r.pending)} {unit} pending</p>
+      ) : (
+        <p className="mt-0.5 text-[10px] text-faint">complete</p>
+      )}
+    </div>
+  );
+}
+
+function StatusPill({ label }: { label: "Received" | "Partial" | "Pending" }) {
+  const styles =
+    label === "Received"
+      ? "bg-primary-soft text-primary"
+      : label === "Partial"
+      ? "bg-primary-soft text-primary"
+      : "bg-bg text-muted";
+  return (
+    <span className={cn("rounded px-1.5 py-px text-[10px] font-semibold", styles)}>
+      {label}
+    </span>
+  );
+}
+
 function RowActions({
   canModify,
+  onReceive,
   onEdit,
   onDelete,
   alwaysVisible,
 }: {
   canModify: boolean;
+  onReceive: () => void;
   onEdit: () => void;
   onDelete: () => void;
   alwaysVisible?: boolean;
 }) {
-  if (!canModify) {
-    return <span className="block text-right text-[11px] text-faint">—</span>;
-  }
   return (
     <div
       className={cn(
         "flex items-center justify-end gap-1",
-        !alwaysVisible && "opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+        !alwaysVisible && "sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:focus-within:opacity-100"
       )}
     >
       <button
-        onClick={onEdit}
+        onClick={onReceive}
         className="rounded-md p-1.5 text-muted transition-colors hover:bg-primary-soft hover:text-primary"
-        aria-label="Edit booking"
+        aria-label="Record delivery"
+        title="Record delivery"
       >
-        <Pencil className="h-4 w-4" />
+        <PackageCheck className="h-4 w-4" />
       </button>
-      <button
-        onClick={onDelete}
-        className="rounded-md p-1.5 text-muted transition-colors hover:bg-danger-soft hover:text-danger"
-        aria-label="Delete booking"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      {canModify && (
+        <>
+          <button
+            onClick={onEdit}
+            className="rounded-md p-1.5 text-muted transition-colors hover:bg-primary-soft hover:text-primary"
+            aria-label="Edit booking"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="rounded-md p-1.5 text-muted transition-colors hover:bg-danger-soft hover:text-danger"
+            aria-label="Delete booking"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -502,7 +605,7 @@ function SkeletonRows() {
     <>
       {Array.from({ length: 6 }).map((_, i) => (
         <tr key={i} className="border-b border-border/70">
-          {Array.from({ length: COLUMNS.length + 1 }).map((__, j) => (
+          {Array.from({ length: COLUMNS.length + EXTRA_COLS }).map((__, j) => (
             <td key={j} className="px-3 py-3">
               <div className="h-3.5 w-full max-w-[120px] animate-pulse rounded bg-bg" />
             </td>

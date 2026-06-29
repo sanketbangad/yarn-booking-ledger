@@ -4,9 +4,13 @@ import { useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { BookingTable } from "@/components/BookingTable";
 import { BookingFormModal } from "@/components/BookingFormModal";
+import { DeliveryModal } from "@/components/DeliveryModal";
+import { GodownSummary } from "@/components/GodownSummary";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/Toast";
 import { useBookings } from "@/hooks/useBookings";
+import { useDeliveries } from "@/hooks/useDeliveries";
+import { useGodowns } from "@/hooks/useGodowns";
 import { createClient } from "@/lib/supabase/client";
 import type { Booking, Profile } from "@/lib/types";
 
@@ -18,10 +22,14 @@ export function DashboardClient({ profile }: DashboardClientProps) {
   const supabase = useMemo(() => createClient(), []);
   const { toast } = useToast();
   const { bookings, loading, error, flashId } = useBookings();
+  const { deliveries, byBooking, receivedByBooking } = useDeliveries();
+  const { godowns, addGodown } = useGodowns();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<Booking | null>(null);
+
+  const [receiving, setReceiving] = useState<Booking | null>(null);
 
   const [toDelete, setToDelete] = useState<Booking | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -54,6 +62,11 @@ export function DashboardClient({ profile }: DashboardClientProps) {
     }
   }
 
+  // Keep the receiving modal's booking reference fresh as bookings update.
+  const receivingLive = receiving
+    ? bookings.find((b) => b.id === receiving.id) ?? receiving
+    : null;
+
   return (
     <div className="min-h-dvh">
       <Header profile={profile} />
@@ -65,15 +78,21 @@ export function DashboardClient({ profile }: DashboardClientProps) {
           </div>
         )}
 
+        <div className="mb-3">
+          <GodownSummary deliveries={deliveries} />
+        </div>
+
         <BookingTable
           bookings={bookings}
           loading={loading}
           currentUserId={profile.id}
           isAdmin={isAdmin}
           flashId={flashId}
+          receivedByBooking={receivedByBooking}
           onNew={openCreate}
           onEdit={openEdit}
           onDelete={setToDelete}
+          onReceive={setReceiving}
         />
       </main>
 
@@ -84,6 +103,18 @@ export function DashboardClient({ profile }: DashboardClientProps) {
         userId={profile.id}
         userName={profile.full_name}
         onClose={() => setFormOpen(false)}
+      />
+
+      <DeliveryModal
+        open={!!receivingLive}
+        booking={receivingLive}
+        deliveries={receivingLive ? byBooking.get(receivingLive.id) ?? [] : []}
+        godowns={godowns}
+        userId={profile.id}
+        userName={profile.full_name}
+        isAdmin={isAdmin}
+        onAddGodown={addGodown}
+        onClose={() => setReceiving(null)}
       />
 
       <ConfirmDialog
