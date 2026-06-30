@@ -6,11 +6,14 @@ import { BookingTable } from "@/components/BookingTable";
 import { BookingFormModal } from "@/components/BookingFormModal";
 import { DeliveryModal } from "@/components/DeliveryModal";
 import { GodownSummary } from "@/components/GodownSummary";
+import { RequirementsPanel } from "@/components/RequirementsPanel";
+import { RequirementFormModal } from "@/components/RequirementFormModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/Toast";
 import { useBookings } from "@/hooks/useBookings";
 import { useDeliveries } from "@/hooks/useDeliveries";
 import { useGodowns } from "@/hooks/useGodowns";
+import { useRequirements } from "@/hooks/useRequirements";
 import { createClient } from "@/lib/supabase/client";
 import type { Booking, Profile } from "@/lib/types";
 
@@ -24,12 +27,18 @@ export function DashboardClient({ profile }: DashboardClientProps) {
   const { bookings, loading, error, flashId } = useBookings();
   const { deliveries, byBooking, receivedByBooking } = useDeliveries();
   const { godowns, addGodown } = useGodowns();
+  const {
+    open: openReqs,
+    fulfilled: fulfilledReqs,
+    loading: reqLoading,
+  } = useRequirements();
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<Booking | null>(null);
 
   const [receiving, setReceiving] = useState<Booking | null>(null);
+  const [reqFormOpen, setReqFormOpen] = useState(false);
 
   const [toDelete, setToDelete] = useState<Booking | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -62,7 +71,6 @@ export function DashboardClient({ profile }: DashboardClientProps) {
     }
   }
 
-  // Keep the receiving modal's booking reference fresh as bookings update.
   const receivingLive = receiving
     ? bookings.find((b) => b.id === receiving.id) ?? receiving
     : null;
@@ -77,6 +85,18 @@ export function DashboardClient({ profile }: DashboardClientProps) {
             Couldn&apos;t load bookings: {error}
           </div>
         )}
+
+        <div className="mb-3">
+          <RequirementsPanel
+            open={openReqs}
+            fulfilled={fulfilledReqs}
+            loading={reqLoading}
+            userId={profile.id}
+            userName={profile.full_name}
+            isAdmin={isAdmin}
+            onAdd={() => setReqFormOpen(true)}
+          />
+        </div>
 
         <div className="mb-3">
           <GodownSummary deliveries={deliveries} />
@@ -115,6 +135,13 @@ export function DashboardClient({ profile }: DashboardClientProps) {
         isAdmin={isAdmin}
         onAddGodown={addGodown}
         onClose={() => setReceiving(null)}
+      />
+
+      <RequirementFormModal
+        open={reqFormOpen}
+        userId={profile.id}
+        userName={profile.full_name}
+        onClose={() => setReqFormOpen(false)}
       />
 
       <ConfirmDialog

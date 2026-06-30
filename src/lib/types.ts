@@ -69,8 +69,36 @@ export interface DeliveryInput {
   remarks: string;
 }
 
+// ----- Yarn requirements (procurement board) ------------------------------
+
+export interface Requirement {
+  id: string;
+  po_number: string;
+  yarn_name: string;
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  remarks: string | null;
+  fulfilled: boolean;
+  created_by: string;
+  created_by_name: string;
+  fulfilled_by: string | null;
+  fulfilled_by_name: string | null;
+  fulfilled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Shape submitted from the requirement form. */
+export interface RequirementInput {
+  po_number: string;
+  yarn_name: string;
+  quantity: number;
+  quantity_unit: QuantityUnit;
+  remarks: string;
+}
+
 // ----- Supabase generated-style Database type -----------------------------
-// Hand-written to match supabase/schema.sql + deliveries.sql.
+// Hand-written to match supabase/schema.sql + deliveries.sql + requirements.sql.
 
 export interface Database {
   public: {
@@ -129,6 +157,26 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Delivery>;
+      };
+      requirements: {
+        Row: Requirement;
+        Insert: {
+          id?: string;
+          po_number: string;
+          yarn_name: string;
+          quantity: number;
+          quantity_unit?: QuantityUnit;
+          remarks?: string | null;
+          fulfilled?: boolean;
+          created_by: string;
+          created_by_name: string;
+          fulfilled_by?: string | null;
+          fulfilled_by_name?: string | null;
+          fulfilled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Requirement>;
       };
     };
     Views: Record<string, never>;
